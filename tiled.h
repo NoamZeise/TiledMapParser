@@ -1,14 +1,13 @@
-#ifndef TILED_H
-#define TILED_H
+#ifndef TILED_MAP_PARSER_H
+#define TILED_MAP_PARSER_H
 
-#include "rapidxml.hpp"
+#include <rapidxml.hpp>
 
 #include <string>
 #include <fstream>
 #include <stdexcept>
 #include <stdlib.h>
 #include <vector>
-
 #include <iostream>
 
 namespace tiled
@@ -71,16 +70,6 @@ Properties fillPropStruct(rapidxml::xml_node<> *propertiesNode)
 				std::cout << "WARNING: property " << name << " did not have true or false value!" << std::endl;	
 		}
 
-		else if(name == "camera")
-		{
-			if(value == "true")
-				props.camera = true;
-			else if(value == "false")
-				props.camera = false;
-			else
-				std::cout << "WARNING: property " << name << " did not have true or false value!" << std::endl;	
-		}
-
 		else
 		{
 			std::cout << "WARNING: property " << name << " not recognised!\n";
@@ -89,12 +78,6 @@ Properties fillPropStruct(rapidxml::xml_node<> *propertiesNode)
 	
 	return props;
 }
-
-//END OF CODE THAT YOU NEED TO CHANGE 
-
-
-
-
 
 static char* loadTextFile(std::string filename);
 
@@ -143,6 +126,25 @@ struct Tileset
 	unsigned int imageHeight;
 };
 
+struct Colour
+{
+	Colour() { r = 0; g = 0; b = 0; a = 0;}
+	Colour(int r, int g, int b, int a) { this->r = r; this->g = g; this->b = b; this->a = a; }
+	int r;
+	int g;
+	int b;
+	int a;
+};
+
+struct Text
+{
+	Object obj;
+	Colour colour;
+	std::string text;
+	int pixelSize;
+	int wrap;
+};
+
 struct Map
 {
 public:
@@ -159,6 +161,7 @@ public:
 	std::vector<Layer> layers;
 	std::vector<ObjectGroup> objectGroups;
 	std::vector<ImageLayer> imgLayer;
+	std::vector<Text> texts;
 };
 
 Tileset::Tileset(std::string filename)
@@ -290,20 +293,43 @@ Map::Map(std::string filename)
 
 		for(auto objectInfo = objGroupInfo->first_node("object"); objectInfo; objectInfo = objectInfo->next_sibling("object"))
 		{
-			objectGroups.back().objs.push_back(Object());
+			auto objTextNode =  objectInfo->first_node("text");
+			Object* fillObj = nullptr;
+			if(objTextNode != nullptr)
+			{
+				texts.push_back(Text());
+				texts.back().pixelSize = std::atoi(objTextNode->first_attribute("pixelsize")->value());
+				texts.back().text = objTextNode->value();
+				std::string colour = objTextNode->first_attribute("color") != nullptr ? objTextNode->first_attribute("color")->value() : "";
+				if(colour != "")
+				{
+					texts.back().colour.r =  std::stoi(colour.substr(1, 2), nullptr, 16);
+					texts.back().colour.g =  std::stoi(colour.substr(3, 2), nullptr, 16);
+					texts.back().colour.b =  std::stoi(colour.substr(5, 2), nullptr, 16);
+					texts.back().colour.a =  colour.size() > 7 ? std::stoi(colour.substr(7, 2), nullptr, 16) : 255;
+				}
+				fillObj = &texts.back().obj;
+			}
+			else
+			{
+				objectGroups.back().objs.push_back(Object());
+				fillObj = &objectGroups.back().objs.back();
+			}
 
 			auto objPropertiesNode = objectInfo->first_node("properties");
 			if(objPropertiesNode != nullptr)
-				objectGroups.back().objs.back().props = fillPropStruct(objPropertiesNode);
+				fillObj->props = fillPropStruct(objPropertiesNode);
 			else
-				objectGroups.back().objs.back().props = Properties();
+				fillObj->props = Properties();
+
+
 
 			auto x = objectInfo->first_attribute("x");
 			auto y = objectInfo->first_attribute("y");
-			if(x!= nullptr && y != nullptr)
+			if(x != nullptr && y != nullptr)
 			{ 	
-				objectGroups.back().objs.back().x = std::atof(x->value());
-				objectGroups.back().objs.back().y = std::atof(y->value());
+				fillObj->x = std::atof(x->value());
+				fillObj->y = std::atof(y->value());
 			}
 			else
 				std::cout << "WARNING: object without coords" << std::endl;
@@ -312,8 +338,8 @@ Map::Map(std::string filename)
 			auto h = objectInfo->first_attribute("height");
 			if(w != nullptr && h != nullptr)
 			{
-				objectGroups.back().objs.back().w = std::atof(w->value());
-				objectGroups.back().objs.back().h = std::atof(h->value());
+				fillObj->w = std::atof(w->value());
+				fillObj->h = std::atof(h->value());
 			}
 			
 		}
@@ -352,6 +378,7 @@ char* loadTextFile(std::string filename)
 	text[fileSize] = '\0';
 	return text;
 }
+
 
 } //namespace end
 
