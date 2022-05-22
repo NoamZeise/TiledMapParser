@@ -22,7 +22,7 @@ Properties fillPropStruct(rapidxml::xml_node<> *propertiesNode)
 			else if(value == "false")
 				props.collidable = false;
 			else
-				std::cout << "WARNING: property " << name << " did not have true or false value!" << std::endl;			
+				std::cout << "WARNING: property " << name << " did not have true or false value!" << std::endl;
 		}
 		else if(name == "playerSpawn")
 		{
@@ -31,7 +31,7 @@ Properties fillPropStruct(rapidxml::xml_node<> *propertiesNode)
 			else if(value == "false")
 				props.playerSpawn = false;
 			else
-					std::cout << "WARNING: property " << name << " did not have true or false value!" << std::endl;	
+					std::cout << "WARNING: property " << name << " did not have true or false value!" << std::endl;
 		}
 		else if(name == "enemySpawn")
 		{
@@ -40,7 +40,7 @@ Properties fillPropStruct(rapidxml::xml_node<> *propertiesNode)
 			else if(value == "false")
 				props.enemySpawn = false;
 			else
-				std::cout << "WARNING: property " << name << " did not have true or false value!" << std::endl;	
+				std::cout << "WARNING: property " << name << " did not have true or false value!" << std::endl;
 		}
 		//INSERT CUSTOM PROEPRTIES HERE
 
@@ -49,7 +49,7 @@ Properties fillPropStruct(rapidxml::xml_node<> *propertiesNode)
 			std::cout << "WARNING: property " << name << " not recognised!\n";
 		}
 	}
-	
+
 	return props;
 }
 
@@ -77,6 +77,11 @@ Tileset::Tileset(std::string filename)
 	this->tileCount = std::atoi(tilesetInfo->first_attribute("tilecount")->value());
 	this->columns = std::atoi(tilesetInfo->first_attribute("columns")->value());
 
+	if(tilesetInfo->first_attribute("spacing"))
+		this->spacing  = std::atoi(tilesetInfo->first_attribute("spacing")->value());
+	if(tilesetInfo->first_attribute("margin"))
+		this->margin  = std::atoi(tilesetInfo->first_attribute("margin")->value());
+		
 	auto imageInfo = tilesetInfo->first_node("image");
 	if(imageInfo == nullptr)
 		throw std::runtime_error("tileset at " + filename + " has no image node");
@@ -117,7 +122,7 @@ Map::Map(std::string filename)
 	this->tileHeight = std::atoi(mapInfo->first_attribute("tileheight")->value());
 
 	totalTiles = 0;
-	
+
 	for(auto tilesetInfo = mapInfo->first_node("tileset"); tilesetInfo; tilesetInfo = tilesetInfo->next_sibling("tileset"))
 	{
 		std::string tilesetInfoLoc = tilesetInfo->first_attribute("source")->value();
@@ -155,7 +160,7 @@ Map::Map(std::string filename)
 				case ',':
 					if(currentNum.size() == 0)
 						throw std::runtime_error("layer of map at " + filename + " has blank tile data");
-					layers.back().data.push_back(std::stoi(currentNum));	
+					layers.back().data.push_back(std::stoi(currentNum));
 					currentNum = "";
 					break;
 				default:
@@ -220,13 +225,13 @@ Map::Map(std::string filename)
 			auto x = objectInfo->first_attribute("x");
 			auto y = objectInfo->first_attribute("y");
 			if(x != nullptr && y != nullptr)
-			{ 	
+			{
 				fillObj->x = std::atof(x->value());
 				fillObj->y = std::atof(y->value());
 			}
 			else
 				std::cout << "WARNING: object without coords" << std::endl;
-			
+
 			auto w = objectInfo->first_attribute("width");
 			auto h = objectInfo->first_attribute("height");
 			if(w != nullptr && h != nullptr)
@@ -234,7 +239,7 @@ Map::Map(std::string filename)
 				fillObj->w = std::atof(w->value());
 				fillObj->h = std::atof(h->value());
 			}
-			
+
 		}
 	}
 
