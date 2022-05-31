@@ -13,6 +13,7 @@ The headers deserialises the Tiled map data into structs that can be used by the
 * Flipping
 * Templates
 * objects with a Tile Image
+* Isometric Maps
 
 ## use
 
